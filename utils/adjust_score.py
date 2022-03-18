@@ -1,171 +1,80 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar 16 14:31:13 2022
-
 @author: A2433
 """
+import pandas as pd
+import random
 
-def create_data(ok_nums,ng_nums):
-    def auto_add(main,high,low):
-        types = []
-        for a in range(1,15):
-            if a == 1:
-                types.append(random.uniform(high, 1))
-            else:
-                types.append(random.uniform(0, low))
-        random_no = random.randrange(1,14)
-        temp=types[0]
-        types[0]=types[main-1]
-        types[main-1]=tem       
-        return types
+path = r'D:\Project\avi_ai_z01\visper-1\20220318\V1-10VPJ5939IG-NO3-R1\[92-B2]_2\Panel0001\ai.csv'
+set_path = r'D:\Project\avi_ai_z01\setting.txt'
 
-    path = os.path.join(FINAL_CHART_DATA, '{}.csv'.format(refer))
-    refer_df = pd.read_csv(path)
-    #refer_df = refer_df.groupby(['VRS']).count().reset_index()
-    refer_df['scale'] = refer_df['Image']/refer_df['Image'].sum()*total
-    refer_df = refer_df[['VRS','scale']]
-    df = pd.DataFrame(data = {'VRS': range(0,15)})
-    refer_df = pd.merge(df,refer_df,how='left')
-    refer_df = refer_df.fillna(1.5)
-    random_range = 0.9
-    quantity_list = []    
-    for a in refer_df['scale'].tolist():
-        quantity_list.append(int(random.uniform(a*0.9, a*1.1)))
-    refer_df['scale'] = pd.Series(quantity_list)
-    
-    acc_rate_list = []    
-    for a in refer_df['scale'].tolist():
-        acc_high = random.uniform(acc_rate, acc_rate+5)/100
-        acc_low = random.uniform(acc_rate-5, acc_rate)/100
-        acc_rate_list.append(int(random.uniform(a*acc_low, a*acc_high)))
-    refer_df['acc'] = pd.Series(acc_rate_list)
-    
-    
-    overkill_list = []
-    overkill_all = refer_df.loc[0]['scale'] - refer_df.loc[0]['acc']
-    refer_df.loc[0,'overkill'] = 0
-    refer_df.loc[1:15,'overkill'] = refer_df[1:15]['scale']
-    refer_df['overkill'] = refer_df['overkill']/refer_df['overkill'].sum()*overkill
-    for a in refer_df['overkill'].tolist():
-        overkill_list.append(int(random.uniform(a*0.9, a*1.1)))
-    refer_df['overkill'] = pd.Series(overkill_list)
-    
-    refer_df.loc[0,'scale'] = refer_df['overkill'].sum() + refer_df.loc[0]['acc']
-    threshold = 0.6
+def percentage_range(data):
+    data = data.reset_index(drop=True)
+    data.loc[0,'Values'] = 1 - data.loc[0,'Values']
+    for i in range(1,len(data)):
+        data.loc[i,'Values'] = data.loc[i-1,'Values'] - data.loc[i,'Values']
+    return data
 
-    #print(refer_df)
+
+def roll(times, names_table):
+    roll_nums = [random.uniform(0, 1) for i in range(times)]
+    result = []
+    for i in roll_nums:
+        result.append(names_table.loc[names_table['Values'] <= i,'Parameters'].iloc[0])
+    return result
+
+
+def change_defects(df,setting):
+    df.loc[df['AI_Flag'] == 'OSP1', 'AI_Flag'] = 'TYPE01'
+    df.loc[df['AI_Flag'] == 'GOLD2', 'AI_Flag'] = 'TYPE02'
+    df.loc[df['AI_Flag'] == 'SM3', 'AI_Flag'] = 'TYPE03'
+    df.loc[df['AI_Flag'] == 'Copper_exposure4', 'AI_Flag'] = 'TYPE04'
+    change_nums = len(df[(df['AI_Flag'] == 'Other5') | (df['AI_Flag'] == 'Tiny6')])
+    type_table = setting[setting['Parameters'].str.contains('TYPE')]
+    type_table = percentage_range(type_table)
+    result = roll(change_nums, type_table)
+    df.loc[(df['AI_Flag'] == 'Other5') | (df['AI_Flag'] == 'Tiny6'),'AI_Flag'] = result
+    return df
+
+
+def roll_score(range_list):
+    result = []
+    for i in range_list:
+        start = int(i[3:5])/100
+        end = start + 0.1
+        if end > 1:
+            end = 1
+        result.append(random.uniform(start, end))
+    return result
+
+
+def reverse_score(score_list):
+    result = []
+    for i in score_list:
+        result.append(random.uniform(0, min(i,1-i)))
+    return result
     
     
-    scroe = []
+def change_score(df,setting):
+    ok_nums = len(df[df['AI_Flag'] == 'OK'])
+    type_table = setting[setting['Parameters'].str.contains('OK_')]
+    type_table = percentage_range(type_table)
+    ok_result = roll(ok_nums, type_table)
+    ok_score = roll_score(ok_result)
+    df.loc[df['AI_Flag'] == 'OK', 'Step_Pos_X'] = ok_score
+    df.loc[df['AI_Flag'] == 'OK', 'Step_Pos_Y'] = reverse_score(ok_score)
     
-    for ac in range(int(refer_df.loc[0]['acc']*0.007)):
-        OK = random.uniform(threshold*1.5, 1)
-        main = [OK,1-OK]
-        tail = [0,0]
-        types = []
-        for b in range(1,15):
-            types.append(random.uniform(0, 1-OK))
-        
-        types = [i/sum(types) for i in types]
-        types = [i*(1-OK) for i in types]
-        scroe.append(main+types+tail)
-    for ac in range(int(refer_df.loc[0]['acc']*0.99)):
-        OK = 0.9999
-        #OK = random.uniform(threshold*1.65, 1)
-        main = [OK,1-OK]
-        tail = [0,0]
-        types = []
-        for b in range(1,15):
-            types.append(random.uniform(0, 1-OK))
-        
-        types = [i/sum(types) for i in types]
-        types = [i*(1-OK) for i in types]
-        scroe.append(main+types+tail)
-    for ac in range(int(refer_df.loc[0]['acc']*0.003)):
-        OK = random.uniform(threshold, 1)
-        main = [OK,1-OK]
-        tail = [0,0]
-        types = []
-        for b in range(1,15):
-            types.append(random.uniform(0, 1-OK))
-        
-        types = [i/sum(types) for i in types]
-        types = [i*(1-OK) for i in types]
-        scroe.append(main+types+tail)
-        
-    for ac in range(1,15):
-        
-        for b in range(int(refer_df.loc[ac]['overkill']*0.01)):
-            OK = random.uniform(0.3, threshold)
-            main = [OK,1-OK]
-            tail = [0,ac]
-            types = auto_add(ac,0.5,0.5)
-            types = [i/sum(types) for i in types]
-            types = [i*(1-OK) for i in types]
-            scroe.append(main+types+tail)
-        for b in range(int(refer_df.loc[ac]['overkill']*0.19)):
-            OK = random.uniform(0.4, threshold)
-            main = [OK,1-OK]
-            tail = [0,ac]
-            types = auto_add(ac,0.5,0.5)
-            types = [i/sum(types) for i in types]
-            types = [i*(1-OK) for i in types]
-            scroe.append(main+types+tail)
-        
-        for b in range(int(refer_df.loc[ac]['overkill']*0.8)):
-            OK = random.uniform(0.5, threshold)
-            main = [OK,1-OK]
-            tail = [0,ac]
-            types = auto_add(ac,0.5,0.5)
-            types = [i/sum(types) for i in types]
-            types = [i*(1-OK) for i in types]
-            scroe.append(main+types+tail)
-        
-        for b in range(int(refer_df.loc[ac]['acc']*0.6)):
-            OK = random.uniform(0, 0.001)
-            main = [OK,1-OK]
-            tail = [ac,ac]
-            types = auto_add(ac,0.9,0.001)
-            types = [i/sum(types) for i in types]
-            types = [i*(1-OK) for i in types]
-            scroe.append(main+types+tail)
-        
-        for b in range(int(refer_df.loc[ac]['acc']*0.3)):
-            limitation = random.uniform(0,0.15)
-            OK = random.uniform(0, limitation)
-            main = [OK,1-OK]
-            tail = [ac,ac]
-            types = auto_add(ac,0.9,0.001)
-            types = [i/sum(types) for i in types]
-            types = [i*(1-OK) for i in types]
-            scroe.append(main+types+tail)
-        for b in range(int(refer_df.loc[ac]['acc']*0.1)):
-            limitation = random.uniform(0,0.3)
-            OK = random.uniform(0, limitation)
-            main = [OK,1-OK]
-            tail = [ac,ac]
-            types = auto_add(ac,0.9,0.001)
-            types = [i/sum(types) for i in types]
-            types = [i*(1-OK) for i in types]
-            scroe.append(main+types+tail)
-            
-        for b in range(int((refer_df.loc[ac]['scale']-refer_df.loc[ac]['acc']))):
-            #limitation = random.uniform(0,0.5)
-            cc = random.randrange(1,15)
-            OK = random.uniform(0, 0.2)
-            main = [OK,1-OK]
-            tail = [ac,cc]
-            types = auto_add(cc,0.9,0.1)
-            types = [i/sum(types) for i in types]
-            types = [i*(1-OK) for i in types]
-            scroe.append(main+types+tail)
+    ng_nums = len(df[df['AI_Flag'].str.contains('TYPE')])
+    type_table = setting[setting['Parameters'].str.contains('NG_')]
+    type_table = percentage_range(type_table)
+    ng_result = roll(ng_nums, type_table)
+    ng_score = roll_score(ng_result)
+    df.loc[df['AI_Flag'].str.contains('TYPE'), 'Step_Pos_Y'] = ng_score
+    df.loc[df['AI_Flag'].str.contains('TYPE'), 'Step_Pos_X'] = reverse_score(ng_score)
+    return df
     
-    df = pd.DataFrame(np.array(scroe),columns=['OK','NG',1,2,3,4,5,6,7,8,9,10,11,12,13,14,'VRS','AI'])
-    df['result_ok'] = df['OK']
-    all_list = [*range(1,15,1)]
-    df['result_ng'] = df[all_list].max(axis=1)
-    print(df)
-    original_data_dir_csv = os.path.join(ORIGINAL_DATA_PATH,'{}.csv'.format(filename))
-    original_data_dir_csv2 = os.path.join(ORIGINAL_DATA_PATH,'o{}.csv'.format(filename))
-    df.to_csv(original_data_dir_csv,index=False)
-    df.to_csv(original_data_dir_csv2,index=False)
+
+if __name__ == '__main__':
+    a = change_defects(pd.read_csv(path),pd.read_csv(set_path))
+    change_score(a,pd.read_csv(set_path))

@@ -6,18 +6,14 @@ Created on Mon Mar 14 16:25:34 2022
 """
 import os
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta, date
-import shutil
-import sys
 import glob
-import time
-from threading import Event
-
+from utils import adjust_score
+from tqdm import tqdm
 
 BASE_DIR = os.path.join('..','visper-1')
 RECORD_DIR = os.path.join('..','checked.csv')
-SETTING_DIR = os.path.join('..','init_set.txt')
+SETTING_DIR = os.path.join('.','setting.txt')
 
 def get_ip_address():
     
@@ -28,49 +24,29 @@ def get_ip_address():
     else:
         print('STATUS: unconnected, Please check the internet connection')
         print('STATUS: retry press ENTER...')
-        
-                
-
-def load_history(record_path):
-    if not os.path.exists(record_path):
-        compare_table = pd.DataFrame(columns = ['path','nums'])
-    else:
-        compare_table = pd.read_csv(record_path)
-    return compare_table
-
-
-def check_label(path,check_df,ai_path):
-    renew_list = glob.glob((os.path.join(path,'*\*\*\VRS')))
-    #if len(renew_list) == check_df.loc[check_df['path'] == path]['nums']:
-        #return 'un-changed'
-    base_path = r'\\10.19.13.40\ScanImages\visper-1'
-    for i in renew_list:
-        target = i.replace(base_path,'')
-        target = target.replace('\VRS','')
-        target = ai_path+target
-        print(ai_path)
-        print(target)
-    #check_df.loc[check_df['path'] == path,'nums'] = len(renew_list)
     
 
-def check_ai_files(raw_d_path,save_path):
+def check_ai_files(raw_d_path,save_path,setting_path):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
+    print('STATUS: GET AI FILES COMPARE')
     all_ai_nums = glob.glob((os.path.join(raw_d_path,'*\*\*\AI.csv')))
     cur_ai_nums = glob.glob((os.path.join(save_path,'*\*\*\AI.csv')))
-    print(all_ai_nums,cur_ai_nums)
+    print('STATUS: COPY {}'.format(raw_d_path))
     if len(all_ai_nums) != len(cur_ai_nums):
-        for i in all_ai_nums:
+        for i in tqdm(all_ai_nums):
             df = pd.read_csv(i,header=9)
             save_dir = i.replace(raw_d_path,save_path)
             folder_path = save_dir.replace('\AI.csv','')
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
+            df = adjust_score.change_defects(df,setting_path)
+            df = adjust_score.change_score(df,setting_path)
             df.to_csv(save_dir,index = False)
 
     
     
-def copy_ai_result(save_path,check_path,check_range = 1):
+def copy_ai_result(save_path,check_path,setting_path,check_range = 1):
     check_path = os.path.join(check_path, 'DataFiles(Edit)', 'visper-1')
     if not os.path.exists(save_path):
         os.mkdir(save_path)
@@ -85,14 +61,11 @@ def copy_ai_result(save_path,check_path,check_range = 1):
     if last_date in current_date:
         un_update_date.append(last_date)
     for i in un_update_date:
+        print('STATUS: COPY {}'.format(i))
         check_target = os.path.join(check_path,i)
         save_target = os.path.join(save_path,i)
-        check_ai_files(check_target,save_target)
+        check_ai_files(check_target,save_target,setting_path)
 
 if __name__ == '__main__':
-    #df = load_history(RECORD_DIR)
-    #for i in os.listdir(r'\\10.19.13.40\ScanImages\visper-1'):
-    #    check_label(os.path.join(r'\\10.19.13.40\ScanImages\visper-1',i),df,BASE_DIR)
-    
     target_dir = get_ip_address()
-    copy_ai_result(BASE_DIR,target_dir)
+    copy_ai_result(BASE_DIR,target_dir,pd.read_csv(SETTING_DIR))
