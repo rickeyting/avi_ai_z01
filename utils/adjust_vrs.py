@@ -6,7 +6,6 @@ Created on Fri Mar 18 13:10:28 2022
 """
 
 import pandas as pd
-import numpy as np
 import os
 import glob
 from utils import adjust_score

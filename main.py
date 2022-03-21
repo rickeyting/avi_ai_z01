@@ -8,14 +8,15 @@ Created on Fri Mar 18 09:57:17 2022
 import os
 import pandas as pd
 import numpy as np
-import utils.copy as cp
+from utils import copy, adjust_vrs
 
 setting_dir = os.path.join('.','setting.txt')
 base_dir = os.path.join('.','visper-1')
 
 def load_init():
     if not os.path.exists(setting_dir):
-        default = [['SCORE RANGE : ',np.nan],
+        default = [['Filter rate', 0.91],
+                   ['SCORE RANGE : ',np.nan],
                    ['OK_99%',0.767],
                    ['OK_90%',0.110],
                    ['OK_80%',0.038],
@@ -69,7 +70,8 @@ def load_init():
 if __name__ == '__main__':
     setting_df = load_init()
     print('STATUS: GET IP')
-    ip_path = cp.get_ip_address()
+    ip_path = copy.get_ip_address()
     print('STATUS: START COPY')
-    cp.copy_ai_result(base_dir,ip_path,setting_df)
-    
+    copy.copy_ai_result(base_dir,ip_path,setting_df)
+    print('STATUS: UPDATE DATA')
+    adjust_vrs.check_label(base_dir,ip_path,setting_df)

@@ -5,6 +5,7 @@ Created on Wed Mar 16 14:31:13 2022
 """
 import pandas as pd
 import random
+import numpy as np
 
 path = r'D:\Project\avi_ai_z01\visper-1\20220318\V1-10VPJ5939IG-NO3-R1\[92-B2]_2\Panel0001\ai.csv'
 set_path = r'D:\Project\avi_ai_z01\setting.txt'
@@ -25,7 +26,7 @@ def roll(times, names_table):
     return result
 
 
-def change_defects(df,setting):
+def change_defects(df, setting):
     df.loc[df['AI_Flag'] == 'OSP1', 'AI_Flag'] = 'TYPE01'
     df.loc[df['AI_Flag'] == 'GOLD2', 'AI_Flag'] = 'TYPE02'
     df.loc[df['AI_Flag'] == 'SM3', 'AI_Flag'] = 'TYPE03'
@@ -35,6 +36,12 @@ def change_defects(df,setting):
     type_table = percentage_range(type_table)
     result = roll(change_nums, type_table)
     df.loc[(df['AI_Flag'] == 'Other5') | (df['AI_Flag'] == 'Tiny6'),'AI_Flag'] = result
+    
+    proportion = setting.loc[setting['Parameters'] =='Filter rate']['Values']
+    chosen_idx = df.loc[df['AI_Flag'].str.contains('TYPE')].index.tolist()
+    replace_size = int(len(chosen_idx)*random.uniform(proportion-0.05, proportion+0.05))
+    chosen_idx = np.random.choice(chosen_idx, replace = False, size = replace_size)
+    df.loc[chosen_idx, 'AI_Flag'] = 'OK'
     return df
 
 

@@ -1,4 +1,5 @@
 Parameters,Values
+Filter rate,0.91
 SCORE RANGE : ,
 OK_99%,0.767
 OK_90%,0.11
