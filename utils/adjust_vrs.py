@@ -31,7 +31,7 @@ def check_label(save_path,check_path,setting):
             df = pd.read_csv(os.path.join(change_target,'AI.csv'))
             for j in os.listdir(i):
                 defect_type = adjust_score.roll(1, type_table)
-                defect_type = 'TYPE' + defect_type[4:]
+                defect_type = 'TYPE' + defect_type[0][4:]
                 a = df.loc[(df['AVI_Image_Path'].str.contain(j)) & (df['AI_Flag'] == 'OK'), 'Step_Pos_Y']
                 df.loc[(df['AVI_Image_Path'].str.contain(j)) & (df['AI_Flag'] == 'OK'), 'Step_Pos_Y'] = df.loc[(df['AVI_Image_Path'].str.contain(j)) & (df['AI_Flag'] == 'OK'), 'Step_Pos_X']
                 df.loc[(df['AVI_Image_Path'].str.contain(j)) & (df['AI_Flag'] == 'OK'), 'Step_Pos_X'] = a

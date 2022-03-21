@@ -7,7 +7,7 @@ import pandas as pd
 import random
 import numpy as np
 
-path = r'D:\Project\avi_ai_z01\visper-1\20220318\V1-10VPJ5939IG-NO3-R1\[92-B2]_2\Panel0001\ai.csv'
+path = r'\\10.19.13.40\DataFiles(Edit)\visper-1\20220318\V1-10VPJ5939IA-2X-R1\[135-Y6]_3\Panel0001\AI.csv'
 set_path = r'D:\Project\avi_ai_z01\setting.txt'
 
 def percentage_range(data):
@@ -27,6 +27,15 @@ def roll(times, names_table):
 
 
 def change_defects(df, setting):
+    ##fillup the empty data
+    if len(df.loc[df['AI_Flag'].isnull()]) > 0:
+        change_nums = len(df.loc[df['AI_Flag'].isnull()])
+        type_table = setting[setting['Parameters'].str.contains('VRS_')]
+        type_table = percentage_range(type_table)
+        result = roll(change_nums, type_table)
+        result = ['TYPE' + i[4:] for i in result]
+        df.loc[df['AI_Flag'].isnull(),'AI_Flag'] = result
+    ##replace the defect type
     df.loc[df['AI_Flag'] == 'OSP1', 'AI_Flag'] = 'TYPE01'
     df.loc[df['AI_Flag'] == 'GOLD2', 'AI_Flag'] = 'TYPE02'
     df.loc[df['AI_Flag'] == 'SM3', 'AI_Flag'] = 'TYPE03'
@@ -36,8 +45,8 @@ def change_defects(df, setting):
     type_table = percentage_range(type_table)
     result = roll(change_nums, type_table)
     df.loc[(df['AI_Flag'] == 'Other5') | (df['AI_Flag'] == 'Tiny6'),'AI_Flag'] = result
-    
-    proportion = setting.loc[setting['Parameters'] =='Filter rate']['Values']
+    ##renew the type by proportion 
+    proportion = setting.loc[setting['Parameters'] =='Filter rate','Values'][0]
     chosen_idx = df.loc[df['AI_Flag'].str.contains('TYPE')].index.tolist()
     replace_size = int(len(chosen_idx)*random.uniform(proportion-0.05, proportion+0.05))
     chosen_idx = np.random.choice(chosen_idx, replace = False, size = replace_size)
@@ -83,5 +92,5 @@ def change_score(df,setting):
     
 
 if __name__ == '__main__':
-    a = change_defects(pd.read_csv(path),pd.read_csv(set_path))
-    change_score(a,pd.read_csv(set_path))
+    a = change_defects(pd.read_csv(path,header=9),pd.read_csv(set_path))
+    #change_score(a,pd.read_csv(set_path))
